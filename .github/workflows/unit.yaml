@@ -38,3 +38,5 @@ jobs:
         pip install -e .[tests]
 
         pytest -sx pymatch/tests
+
+# EOF

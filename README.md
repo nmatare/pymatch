@@ -1,8 +1,8 @@
 # pymatch
 
-[![Python 3.7.12](https://img.shields.io/badge/python-3.7.12-blue.svg)](https://www.python.org/downloads/release/python-369/)[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)![Unit Tests](https://github.com/nmatare/pymatch/actions/workflows/unit.yaml/badge.svg)
+A lightweight pure-python centralized exchange matching engine
 
-A lightweight pure-python matching engine
+[![Python 3.7.11](https://img.shields.io/badge/python-3.7.11-blue.svg)](https://www.python.org/downloads/release/python-369/)[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)![Unit Tests](https://github.com/nmatare/pymatch/actions/workflows/unit.yaml/badge.svg)
 
 ## Installation
 

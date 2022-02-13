@@ -3,12 +3,11 @@
 #
 # "Author: Nathan Matare <nathan.matare@gmail.com>"
 #
-# """ Typing """
+# """ Typing Hints """
 
 from typing import TypeVar
 
-Order = TypeVar('pmatch.order.Order')
-
-Orderbook = TypeVar('pmatch.order.Orderbook')
+Order = TypeVar('pymatch.order.Order')
+Orderbook = TypeVar('pymatch.order.Orderbook')
 
 # EOF

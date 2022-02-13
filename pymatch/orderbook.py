@@ -323,8 +323,8 @@ class PriceTimePriorityOrderbook(_BaseOrderbook):
             volume: float,
             queue_position: Optional[List] = None,
         ) -> None:
-            # Updates the "displayed" orderbook. The orderbook displayed on
-            # stdout.
+            # Updates the "displayed" orderbook. Should sync <> with the
+            # "actual" orderbook.
 
             if queue_position is None:
                 # Case 1): Remove an entire price from the book
@@ -334,6 +334,5 @@ class PriceTimePriorityOrderbook(_BaseOrderbook):
                 DISPLAY_BOOK_FORMAT.modify_volume(
                     price, queue_position, volume,
                 )
-
 
 # EOF

@@ -4,6 +4,8 @@
 #
 # """ Testing configuration """
 
+from typing import List
+
 import numpy as np
 import sys
 
@@ -15,7 +17,7 @@ def generate_testing_orders(
     bid_sigma: float = 1.0,
     num_orders_per_side: int = 100_000_000,
     seed: int = 666,
-) -> list:
+) -> List:
 
     np.random.seed(seed)
 
@@ -42,7 +44,7 @@ def generate_testing_orders(
     return orders
 
 
-def run_orderbook(orderbook: type, orders: list) -> None:
+def run_orderbook(orderbook: type, orders: List) -> None:
 
     made_orders = []
     for line in orders:
@@ -56,6 +58,5 @@ def run_orderbook(orderbook: type, orders: list) -> None:
             and orderbook.best_bid is not sys.maxsize
         ):
             assert orderbook.best_ask - orderbook.best_bid
-
 
 # EOF
