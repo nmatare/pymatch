@@ -1,0 +1,26 @@
+*.log
+*.egg
+.pytest_cache
+.dockerignore
+build/
+dist/
+.ipynb_checkpoints/
+*log
+*__pycache__
+*pytest_cache
+*.log
+*.tox
+*.git
+*.avro
+*.pq
+*.json
+pymatch.egg-info
+pymatch/tests/test_data/*
+secrets/
+docs/
+backstage/
+workspace/
+# Ignore symlinks
+# https://github.com/moby/moby/issues/1676
+README.md
+mkdocs.yml
