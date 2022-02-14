@@ -27,4 +27,4 @@ README.md
 mkdocs.yml
 
 # Profiling data
-*.txt
+profile.txt
