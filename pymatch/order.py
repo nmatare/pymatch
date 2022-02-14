@@ -121,9 +121,12 @@ class IcebergOrder(_BaseOrder):
 
     def __init__(self, peak_size: int, *args, **kwargs):
         super().__init__(*args, type_=OrderType.ICEBERG, **kwargs)
-
         self.peak_size = self._validate_peak_size(peak_size)
-        self._reset_peak_size()
+        self.peak_quantity = self.peak_size  # init peak size
+
+    @property
+    def display_quantity(self) -> int:
+        return self.peak_quantity
 
     def _update_display_quantity(self, matched_quantity: int) -> int:
 
@@ -138,27 +141,27 @@ class IcebergOrder(_BaseOrder):
         if matched_quantity >= self.peak_quantity:
             # If the matched quantity is greater than the current
             # peak-quantity then we should the display the next peak size
-            return self._reset_peak_size()
+            remainder = matched_quantity % self.peak_size
 
-        # Otherwise the matched_quantity is less than the displayed peak
-        # size, so reduce the displayed peak quantity
-        self.peak_quantity -= matched_quantity
+            if not remainder or remainder == self.peak_quantity:
+                self.peak_quantity = self.peak_size  # new peaksize
+            else:
+                self.peak_quantity -= remainder
+        else:
+            self.peak_quantity -= matched_quantity
+            # Otherwise the matched_quantity is less than the displayed peak
+            # size, so reduce the displayed peak quantity
+
         return self.peak_quantity
 
     def _validate_peak_size(self, peak_size: int) -> int:
-        if peak_size > self.quantity:
+        if peak_size >= self.quantity:
             raise errors.OrderError(
                 'Received an "Iceberg" order with a peak size greater than '
-                'the given size. '
+                'or equal to the total size. '
             )
 
         return peak_size
-
-    def _reset_peak_size(self) -> None:
-        # The peak may match multiple times: used to resent the quantity back
-        # to the peak size
-        self.peak_quantity = self.peak_size
-        return self.peak_size
 
 
 # EOF

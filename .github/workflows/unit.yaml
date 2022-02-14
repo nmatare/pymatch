@@ -50,6 +50,7 @@ jobs:
     - name: Test Docker Container
       run: |
         set -e
-        echo B,100322,5103,7500 | docker run -i pymatch-${GITHUB_SHA::7}
+        echo $'B,1234567890,32503,1234567890\nB,1138,31502,7500' \
+        | docker run -i pymatch-${GITHUB_SHA::7}
 
 # EOF

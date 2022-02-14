@@ -20,7 +20,11 @@ secrets/
 docs/
 backstage/
 workspace/
+
 # Ignore symlinks
 # https://github.com/moby/moby/issues/1676
 README.md
 mkdocs.yml
+
+# Profiling data
+*.txt

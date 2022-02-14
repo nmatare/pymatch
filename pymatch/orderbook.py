@@ -10,6 +10,7 @@ from typing import Dict, List
 import abc
 import os
 import sys
+
 import sortedcontainers
 
 from pymatch._typing import Order
@@ -66,7 +67,10 @@ class _BaseOrderbook(abc.ABC):
         # book must be re-iterated which will cause significant slowdowns.
         # Disable displaying to improve performance
 
-        self._is_display = os.getenv(ENV_VAR_ENABLE_PROFILING, is_display)
+        if os.getenv(ENV_VAR_ENABLE_PROFILING):
+            is_display = False
+
+        self._is_display = is_display
         self._bids = _PriceLevelContainer(order_lib.OrderSide.BUY)
         self._asks = _PriceLevelContainer(order_lib.OrderSide.ASK)
         # given {price[Integer]: queue[List[Order]]}
@@ -127,8 +131,11 @@ class _BaseOrderbook(abc.ABC):
         except IndexError:
             return INTEGER_NAN
 
+    @abc.abstractmethod
     def add(self, order: Order) -> None:
         r""" The `add` method adds an order to the orderbook.
+        Each superclass of `_BaseOrderbook` should implement an `add`
+        method which will handle order resolution.
 
         Parameters:
             order: a `pymatch.order.Order` order
@@ -136,29 +143,9 @@ class _BaseOrderbook(abc.ABC):
         Returns:
             None
         """
+        pass
 
-        passive_quote = None
-
-        if order.type is not order_lib.OrderType.MARKET:
-
-            if order.side is order_lib.OrderSide.BID and (
-                order.price < self.best_ask or INTEGER_NAN is self.best_ask
-            ):
-                # Handle buy passive orders
-                passive_quote = self._bids.add(order)
-
-            if order.side is order_lib.OrderSide.ASK and (
-                order.price > self.best_bid or INTEGER_NAN is self.best_bid
-            ):
-                # Handle sell passive orders
-                passive_quote = self._asks.add(order)
-
-        if not bool(passive_quote) or order.type is order_lib.OrderType.MARKET:
-            self._handle_match(order)  # Aggressive matching order
-
-        if self._is_display:
-            self._output_quote_message()
-
+    @abc.abstractmethod
     def cancel(self, order: Order) -> None:
         r""" The `cancel` method removes an order from the orderbook.
 
@@ -168,10 +155,9 @@ class _BaseOrderbook(abc.ABC):
         Returns:
             None
         """
-        raise errors.OrderbookMethodNotSupportedError(
-            'Canceling orders is not yet supported! '
-        )
+        pass
 
+    @abc.abstractmethod
     def modify(self, order: Order) -> None:
         r""" The `modify` method modifies an order already on the orderbook.
 
@@ -180,22 +166,6 @@ class _BaseOrderbook(abc.ABC):
 
         Returns:
             None
-        """
-
-        raise errors.OrderbookMethodNotSupportedError(
-            'Modifying orders it not yet supported! '
-        )
-
-    @abc.abstractmethod
-    def _handle_match(self, order: Order) -> None:
-        r""" Each superclass of `_BaseOrderbook` should implement a
-        `_handle_match` which will handle an aggressive match message
-
-        Parameters:
-            order: an aggressive order to resolve
-
-        Returns:
-            `None`
         """
         pass
 

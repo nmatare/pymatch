@@ -7,9 +7,8 @@
 import os
 import io
 import sys
+import copy
 import contextlib
-
-import pytest
 
 from pymatch import lse as lse_order_lib
 from pymatch.tests.lse import conftest
@@ -104,8 +103,11 @@ class TestLimitOrder:
                 sell_order_3 = lse_order_lib.build_order_from_ascii_string(x)
                 orderbook.add(sell_order_3)
 
-        x = 'B,99,33000,445'
-        aggressive_order_1 = lse_order_lib.build_order_from_ascii_string(x)
+                x = 'B,99,33000,445'
+                aggressive_order_1 = lse_order_lib.build_order_from_ascii_string(
+                    x
+                )
+                orderbook.add(aggressive_order_1)
 
         # check final stdout
         with io.StringIO() as stream:
@@ -142,28 +144,168 @@ class TestLimitOrder:
 
 class TestIcebergOrder:
 
-    # Testcases adopted from:
+    # These testcases adopted from:
     # ref: SETSmm and Iceberg Orders SERVICE & TECHNICAL DESCRIPTION
+    # 4.2.3 How iceberg orders work
 
     def test_add_aggressive_iceberg_order(self):
-        ...
+
+        orderbook = lse_order_lib.LSEOrderbook()
+
+        with open(os.devnull, 'w') as null:
+            with contextlib.redirect_stdout(null):
+                x = 'B,1,99,50000'
+                buy_order_1 = lse_order_lib.build_order_from_ascii_string(x)
+                orderbook.add(buy_order_1)
+
+                x = 'B,2,98,25500'
+                buy_order_2 = lse_order_lib.build_order_from_ascii_string(x)
+                orderbook.add(buy_order_2)
+
+                x = 'A,3,100,10000'
+                sell_order_2 = lse_order_lib.build_order_from_ascii_string(x)
+                orderbook.add(sell_order_2)
+
+                x = 'A,4,100,7500'
+                sell_order_3 = lse_order_lib.build_order_from_ascii_string(x)
+                orderbook.add(sell_order_3)
+
+                x = 'A,5,101,20000'
+                sell_order_4 = lse_order_lib.build_order_from_ascii_string(x)
+                orderbook.add(sell_order_4)
+
+        x = 'B,99,100,100000,10000'
+        aggressive_order_1 = lse_order_lib.build_order_from_ascii_string(x)
+
+        # check final stdout
+        with io.StringIO() as stream:
+            with contextlib.redirect_stdout(stream):
+                orderbook.add(aggressive_order_1)
+
+        assert orderbook.best_ask == 101
+        assert orderbook.best_bid == 100
+        assert orderbook.bids[100][0].quantity == 82500
+        assert orderbook.bids[100][0].peak_quantity == 10000
 
     def test_add_passive_iceberg_order(self):
-        ...
+        orderbook = lse_order_lib.LSEOrderbook()
 
-    def test_single_match_with_iceberg_order(self):
-        ...
+        with open(os.devnull, 'w') as null:
+            with contextlib.redirect_stdout(null):
+                x = 'B,1,99,50000'
+                buy_order_1 = lse_order_lib.build_order_from_ascii_string(x)
+                orderbook.add(buy_order_1)
 
-    def test_multiple_match_with_iceberg_order(self):
-        ...
+                x = 'B,2,98,25500'
+                buy_order_2 = lse_order_lib.build_order_from_ascii_string(x)
+                orderbook.add(buy_order_2)
+
+                x = 'A,3,100,10000'
+                sell_order_2 = lse_order_lib.build_order_from_ascii_string(x)
+                orderbook.add(sell_order_2)
+
+                x = 'A,4,100,7500'
+                sell_order_3 = lse_order_lib.build_order_from_ascii_string(x)
+                orderbook.add(sell_order_3)
+
+                x = 'A,5,101,20000'
+                sell_order_4 = lse_order_lib.build_order_from_ascii_string(x)
+                orderbook.add(sell_order_4)
+
+                x = 'B,88,100,100000,10000'
+                iceberg_order_1 = lse_order_lib.build_order_from_ascii_string(
+                    x
+                )
+                orderbook.add(iceberg_order_1)
+
+                x = 'A,999,100,10000'
+                aggressive_order_1 = lse_order_lib.build_order_from_ascii_string(
+                    x
+                )
+
+        # check final stdout
+        with io.StringIO() as stream:
+            with contextlib.redirect_stdout(stream):
+                orderbook.add(aggressive_order_1)
+
+            stdout = stream.getvalue()
+
+        assert stdout.split('\n')[1] == '88,999,100,10000' in stdout
+        assert orderbook.best_ask == 101
+        assert orderbook.best_bid == 100
+        assert orderbook.bids[100][0].quantity == 72500
+        assert orderbook.bids[100][0].peak_quantity == 10000
+
+        x = 'A,9999,100,11000'
+        aggressive_order_2 = lse_order_lib.build_order_from_ascii_string(x)
+
+        # check final stdout
+        with io.StringIO() as stream:
+            with contextlib.redirect_stdout(stream):
+                orderbook.add(aggressive_order_2)
+            stdout = stream.getvalue()
+
+        # "Multiple executions of an iceberg order on the order book will
+        # only generate a single
+        # trade message (5TG) for the iceberg participant
+        # (ie when an incoming order executes
+        # against the peak of an iceberg order and some or all
+        # of the hidden volume)."
+
+        assert stdout.split('\n')[1] == '88,9999,100,11000' in stdout
+        assert orderbook.best_ask == 101
+        assert orderbook.best_bid == 100
+        assert orderbook.bids[100][0].quantity == 61500
+        assert orderbook.bids[100][0].peak_quantity == 9000
+
+        # Now add second iceberg order
+        x = 'B,888,100,50000,20000'
+        iceberg_order_2 = lse_order_lib.build_order_from_ascii_string(x)
+        with io.StringIO() as stream:
+            with contextlib.redirect_stdout(stream):
+                orderbook.add(iceberg_order_2)
+        assert len(orderbook.bids[100]) == 2  # now 2 iceberg orders
+
+        x = 'A,99999,100,35000'
+        aggressive_order_3 = lse_order_lib.build_order_from_ascii_string(x)
+        # check final stdout
+        with io.StringIO() as stream:
+            with contextlib.redirect_stdout(stream):
+                orderbook.add(aggressive_order_3)
+            stdout = stream.getvalue()
+
+        # "For example, if an order to
+        # sell 35,000 shares At Best is now entered at 8:30,
+        # then the visible peaks of both
+        # icebergs will be completely filled, and iceberg A will
+        # satisfy the remaining 6,000
+        # shares of the incoming order."
+
+        assert orderbook.bids[100][0].quantity == (61500 - 15000)
+        assert orderbook.bids[100][0].peak_quantity == 4000
+
+        assert orderbook.bids[100][1].quantity == (50000 - 20000)
+        assert orderbook.bids[100][1].peak_quantity == 20000
+
+        # We should see two trade messages
+        assert stdout.split('\n')[1] == '88,99999,100,15000' in stdout
+        assert stdout.split('\n')[2] == '888,99999,100,20000' in stdout
 
 
-@pytest.mark.skip(reason='Profiling only')
 def test_profile_orderbook(iterations: int = 1):
 
     # read from dumped testing data file
     # profile this bad boy:
-    orders = conftest.generate_testing_orders(num_orders_per_side=10_000,)
+    lines = conftest.generate_testing_orders(num_orders_per_side=10_000,)
+
+    fixed = []
+    for line in lines:
+        order = lse_order_lib.build_order_from_ascii_string(line)
+        fixed.append(order)
+
+    orders = []
+    for _ in range(iterations):
+        orders.append(copy.deepcopy(fixed))
 
     from pyinstrument import Profiler
 
@@ -171,9 +313,9 @@ def test_profile_orderbook(iterations: int = 1):
     profiler.start()
     print('\n--- Profling testcase ---')
 
-    for iteration in range(iterations):
+    for i in range(iterations):
         orderbook = lse_order_lib.LSEOrderbook(is_display=False)
-        conftest.run_orderbook(orderbook, orders)
+        conftest.run_orderbook(orderbook, orders[i])
 
     profiler.stop()
 

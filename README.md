@@ -20,8 +20,7 @@ Launch another terminal window and submit orders to the matching engine with
 the following command:
 
 ```sh
-echo A,6808,32505,7777\nB,1138,31502,7500\nA,42100,32507,300 \
-| docker run -i -e ENABLE_PROFILING=0 pymatch
+echo $'B,1234567890,32503,1234567890\nB,1138,31502,7500' | docker run -i pymatch
 ```
 
 Observe trade and book messages as they occur...
@@ -34,7 +33,7 @@ Next, create an isolated conda environment and then run the installation command
 
 ```sh
 conda create --name pymatch python=3.7 --yes && conda activate pymatch
-pip install pip --upgrade
+pip install pip==22.0.3 --upgrade
 
 pip install -e .[tests]
 ```
@@ -47,25 +46,29 @@ pytest pymatch/tests/
 
 See the [`pymatch/tests/lse/test_lse_orderbook.py::test_profile_orderbook`](pymatch/tests/lse/test_lse_orderbook.py) testcase for submitting orders to the matching engine within python.
 
-```python
-from pymatch import lse as lse_order_lib
-
-orderbook = lse_order_lib.LSEOrderbook()
-
-buy_order = lse_order_lib.build_order_from_ascii_string('B,1234567890,32503,1234567890')
-
-orderbook.add(buy_order)
+```sh
+echo $'B,1234567890,32503,1234567890\nB,1138,31502,7500' | python -m pymatch.main
 ```
 
 The output to stdout:
 
-```python
+```sh
+██████╗ ██╗   ██╗███╗   ███╗ █████╗ ████████╗ ██████╗██╗  ██╗
+██╔══██╗╚██╗ ██╔╝████╗ ████║██╔══██╗╚══██╔══╝██╔════╝██║  ██║
+██████╔╝ ╚████╔╝ ██╔████╔██║███████║   ██║   ██║     ███████║
+██╔═══╝   ╚██╔╝  ██║╚██╔╝██║██╔══██║   ██║   ██║     ██╔══██║
+██║        ██║   ██║ ╚═╝ ██║██║  ██║   ██║   ╚██████╗██║  ██║
+╚═╝        ╚═╝   ╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝    ╚═════╝╚═╝  ╚═╝
+
+[WARNING] - Printing orderbook output to stdout. This will severly degrade performance! Set the `ENABLE_PROFILING=1` flag to enable profiling...
+[INFO] - Expecting input from stdin...
 +-----------------------------------------------------------------+
 | BUY                            | SELL                           |
 | Id       | Volume      | Price | Price | Volume      | Id       |
 +----------+-------------+-------+-------+-------------+----------+
 |1234567890|1,234,567,890| 32,503|       |             |          |
-+-----------------------------------------------------------------+
+|      1138|        7,500| 31,502|       |             |          |
+
 ```
 
 ## Performance
@@ -75,7 +78,7 @@ Please note, performance is severely degraded if displaying messages to stdout i
 To profile the performance of the orderbook set the set the environment variable to `ENABLE_PROFILING=1`.
 
 ```sh
-head pymatch/tests/lse/test_data/orders.txt
+head pymatch/tests/lse/test_data/profile.txt
 
-cat pymatch/tests/lse/test_data/orders.txt | docker run -i -e ENABLE_PROFILING=1 pymatch
+cat pymatch/tests/lse/test_data/profile.txt | ENABLE_PROFILING=1 python -m pymatch.main
 ```
