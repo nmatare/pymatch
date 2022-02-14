@@ -29,7 +29,7 @@ Observe trade and book messages as they occur...
 
 First, you will need to install the [conda package manager.](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html#install-linux-silent)
 
-Next, create an isolated conda environment and then run the installation commands.
+Next, create an isolated conda environment and then run the installation commands:
 
 ```sh
 conda create --name pymatch python=3.7 --yes && conda activate pymatch
