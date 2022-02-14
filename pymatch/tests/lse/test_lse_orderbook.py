@@ -9,9 +9,8 @@ import io
 import sys
 import contextlib
 
-from pymatch import order as order_lib
-from pymatch.orderbook import PriceTimePriorityOrderbook
-from pymatch.tests import conftest
+from pymatch import lse as lse_order_lib
+from pymatch.tests.lse import conftest
 
 
 _TEST_ADD_LIMIT_ORDER_STDOUT_EXPECTED_OUTPUT = """
@@ -29,45 +28,34 @@ _TEST_ADD_LIMIT_ORDER_STDOUT_EXPECTED_OUTPUT = """
 class TestLimitOrder:
     def test_add_limit_order(self):
 
-        # stdout write is way to slow,
-        # need to append,
+        orderbook = lse_order_lib.LSEOrderbook()
 
-        orderbook = PriceTimePriorityOrderbook(output_stdout=True)
+        with open(os.devnull, 'w') as null:
+            with contextlib.redirect_stdout(null):
+                x = 'B,1234567890,32503,1234567890'
+                buy_order_1 = lse_order_lib.build_order_from_ascii_string(x)
+                orderbook.add(buy_order_1)
 
-        #         with open(os.devnull, 'w') as null:
-        #             with contextlib.redirect_stdout(null):
-        x = 'B,1234567890,32503,1234567890'
-        buy_order_1 = order_lib.build_order_from_ascii_string(x)
-        orderbook.add(buy_order_1)
+                x = 'A,1234567891,32504,1234567890'
+                sell_order_1 = lse_order_lib.build_order_from_ascii_string(x)
+                orderbook.add(sell_order_1)
 
-        x = 'A,1234567891,32504,1234567890'
-        sell_order_1 = order_lib.build_order_from_ascii_string(x)
-        orderbook.add(sell_order_1)
+                x = 'A,6808,32505,7777'
+                sell_order_2 = lse_order_lib.build_order_from_ascii_string(x)
+                orderbook.add(sell_order_2)
 
-        x = 'A,6808,32505,7777'
-        sell_order_2 = order_lib.build_order_from_ascii_string(x)
-        orderbook.add(sell_order_2)
+                x = 'B,1138,31502,7500'
+                buy_order_2 = lse_order_lib.build_order_from_ascii_string(x)
+                orderbook.add(buy_order_2)
 
-        x = 'B,1138,31502,7500'
-        buy_order_2 = order_lib.build_order_from_ascii_string(x)
-        orderbook.add(buy_order_2)
+                x = 'A,42100,32507,3000'
+                sell_order_3 = lse_order_lib.build_order_from_ascii_string(x)
 
-        x = 'A,42100,32507,3000'
-        sell_order_3 = order_lib.build_order_from_ascii_string(x)
+        with io.StringIO() as stream:
+            with contextlib.redirect_stdout(stream):
+                orderbook.add(sell_order_3)
 
-        breakpoint()
-
-        # check final stdout
-        # import time
-        # time.sleep(1)
-        #         with io.StringIO() as stream:
-        #             with contextlib.redirect_stdout(stream):
-        orderbook.add(sell_order_3)
-
-        breakpoint()
-        # time.sleep(1)
-
-        #    stdout = stream.getvalue()
+            stdout = stream.getvalue()
 
         assert stdout == _TEST_ADD_LIMIT_ORDER_STDOUT_EXPECTED_OUTPUT.rstrip()
         assert orderbook.best_bid == 32503
@@ -76,16 +64,16 @@ class TestLimitOrder:
     def test_single_match_with_fully_aggressive_limit_order(self):
 
         # One for one match to resting order
-        orderbook = PriceTimePriorityOrderbook(output_stdout=True)
+        orderbook = lse_order_lib.LSEOrderbook()
 
         with open(os.devnull, 'w') as null:
             with contextlib.redirect_stdout(null):
                 x = 'B,100322,5103,7500'
-                resting_order = order_lib.build_order_from_ascii_string(x)
+                resting_order = lse_order_lib.build_order_from_ascii_string(x)
                 orderbook.add(resting_order)
 
         x = 'A,100345,5103,7499'
-        aggressive_order = order_lib.build_order_from_ascii_string(x)
+        aggressive_order = lse_order_lib.build_order_from_ascii_string(x)
 
         # check final stdout
         with io.StringIO() as stream:
@@ -93,29 +81,29 @@ class TestLimitOrder:
                 orderbook.add(aggressive_order)
                 stdout = stream.getvalue()
 
-        assert stdout.partition('\n')[0] == '100322,100345,5103,7499'
+        assert stdout.split('\n')[1] == '100322,100345,5103,7499'
 
     def test_multiple_match_fully_aggressive_limit_order(self):
         # Eats through multiple orders multiple levels until remaining
         # is left on the book
-        orderbook = PriceTimePriorityOrderbook(output_stdout=True)
+        orderbook = lse_order_lib.LSEOrderbook()
 
         with open(os.devnull, 'w') as null:
             with contextlib.redirect_stdout(null):
                 x = 'A,10,32504,444'
-                sell_order_1 = order_lib.build_order_from_ascii_string(x)
+                sell_order_1 = lse_order_lib.build_order_from_ascii_string(x)
                 orderbook.add(sell_order_1)
 
                 x = 'A,11,32505,555'
-                sell_order_2 = order_lib.build_order_from_ascii_string(x)
+                sell_order_2 = lse_order_lib.build_order_from_ascii_string(x)
                 orderbook.add(sell_order_2)
 
                 x = 'A,12,32507,777'
-                sell_order_3 = order_lib.build_order_from_ascii_string(x)
+                sell_order_3 = lse_order_lib.build_order_from_ascii_string(x)
                 orderbook.add(sell_order_3)
 
         x = 'B,99,33000,445'
-        aggressive_order_1 = order_lib.build_order_from_ascii_string(x)
+        aggressive_order_1 = lse_order_lib.build_order_from_ascii_string(x)
 
         # check final stdout
         with io.StringIO() as stream:
@@ -132,7 +120,7 @@ class TestLimitOrder:
         # Submit a much larger aggressive and observe
         # that the remainder is now on the book:
         x = 'B,100,33000,10000'
-        aggressive_order_2 = order_lib.build_order_from_ascii_string(x)
+        aggressive_order_2 = lse_order_lib.build_order_from_ascii_string(x)
 
         # check final stdout
         with io.StringIO() as stream:
@@ -155,7 +143,10 @@ class TestIcebergOrder:
     # Testcases adopted from:
     # ref: SETSmm and Iceberg Orders SERVICE & TECHNICAL DESCRIPTION
 
-    def test_add_iceberg_order(self):
+    def test_add_aggressive_iceberg_order(self):
+        ...
+
+    def test_add_passive_iceberg_order(self):
         ...
 
     def test_single_match_with_iceberg_order(self):
@@ -169,7 +160,7 @@ def test_profile_orderbook(iterations: int = 1):
 
     # read from dumped testing data file
     # profile this bad boy:
-    orders = conftest.generate_testing_orders(num_orders_per_side=1_000,)
+    orders = conftest.generate_testing_orders(num_orders_per_side=10_000,)
 
     from pyinstrument import Profiler
 
@@ -178,7 +169,7 @@ def test_profile_orderbook(iterations: int = 1):
     print('\n--- Profling testcase ---')
 
     for iteration in range(iterations):
-        orderbook = PriceTimePriorityOrderbook(output_stdout=True)
+        orderbook = lse_order_lib.LSEOrderbook(is_display=False)
         conftest.run_orderbook(orderbook, orders)
 
     profiler.stop()

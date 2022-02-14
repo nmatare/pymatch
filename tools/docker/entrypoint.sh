@@ -3,4 +3,6 @@
 
 set -e
 
+python -m pymatch.main
+
 # EOF

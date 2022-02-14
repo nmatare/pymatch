@@ -6,14 +6,14 @@
 # """ Formatting for orderbook output """
 
 import abc
-import sys
-
 import itertools
-import threading
-import queue
 
 from pymatch._typing import Order
+from pymatch import order as order_lib
 
+
+BOOK_FORMAT_BODY_BID = '|{:>10}|{:>13,}|{:>7,}'
+BOOK_FORMAT_BODY_ASK = '|{:>7,}|{:>13,}|{:>10}|'
 
 _BOOK_FORMAT_HEADER = """
 +-----------------------------------------------------------------+
@@ -22,39 +22,9 @@ _BOOK_FORMAT_HEADER = """
 +----------+-------------+-------+-------+-------------+----------+
 """
 
-BOOK_FORMAT_BODY_BID = '|{:>10}|{:>13,}|{:>7,}'
-BOOK_FORMAT_BODY_ASK = '|{:>7,}|{:>13,}|{:>10}|'
-
 _BOOK_FORMAT_FOOTER = (
     '\n+-----------------------------------------------------------------+'
 )
-
-_BOOK_FORMAT_BODY = """
-+-----------------------------------------------------------------+
-| BUY                            | SELL                           |
-| Id       | Volume      | Price | Price | Volume      | Id       |
-+----------+-------------+-------+-------+-------------+----------+
-|          |             |       |       |             |          |
-+-----------------------------------------------------------------+
-"""
-
-
-class DISPLAY_BOOK_FORMAT:
-    r""" A global class definition used by the calling program to update
-    the displayed state of the orderbook.
-
-    This allows us to update both the actual and displayed state of
-    the orderbook at the same time. Writing of the updated state is conferred
-    to a seperate thread for performance reasons.
-    """
-
-    @classmethod
-    def modify_price(cls, price: int, volume: float):
-        breakpoint()
-
-    @classmethod
-    def modify_volume(cls, price: int, position: int, volume: float):
-        breakpoint()
 
 
 class _Format(abc.ABC):
@@ -131,7 +101,6 @@ class TradeFormat(_Format):
         matched_price: int,
         matched_quantity: int,
     ):
-        from pymatch import order as order_lib  # potential circular
 
         if aggressive_order.side is order_lib.OrderSide.BID:
             buy_order_id = aggressive_order.identity
@@ -152,52 +121,5 @@ class TradeFormat(_Format):
     def footer(self) -> str:
         return ''
 
-
-class _CaptureOutputThreadWorker:
-    def __init__(
-        self, should_capture_output: bool, *args, **kwargs,
-    ):
-        self._should_capture_output = should_capture_output
-
-    def capture_trade(self, *args) -> None:
-        message_string = TradeFormat.from_orders(*args)
-
-        if self._should_capture_output:
-            sys.stdout.write(message_string.body)
-
-    def capture_quote(self, *args) -> None:
-        breakpoint()
-
-    def send(self, *args, format_: _Format) -> None:
-        message_string = format_(*args)
-        sys.stdout.write(message_string.body)
-        self._task_queue.task_done()
-
-        format_ = (format_lib.TradeFormat.from_orders,)
-
-
-# class _CaptureOutputThreadWorker(threading.Thread):
-
-# def __init__(
-# self,
-# should_capture_output: bool,
-# *args,
-# **kwargs,
-# ):
-# self._should_capture_output = should_capture_output
-# self._task_queue = queue.Queue()
-# super().__init__(*args, daemon=True, **kwargs)
-
-# def send(self, *args, format_: _Format) -> None:
-# self._task_queue.put(format_(*args))
-
-# def run(self):
-
-# while self._should_capture_output:
-# message_string = self._task_queue.get()
-
-# sys.stdout.write(message_string.body)
-
-# self._task_queue.task_done()
 
 # EOF
