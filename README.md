@@ -7,7 +7,7 @@ A lightweight pure-python centralized exchange matching engine
 
 ## Getting Started
 
-### Docker
+### Docker (preferred)
 
 Start a matching engine instance in a Docker container named `pymatch` by
 running the following commands:
@@ -24,7 +24,7 @@ echo A,6808,32505,7777\nB,1138,31502,7500\nA,42100,32507,300 \
 | docker run -i -e ENABLE_PROFILING=0 pymatch
 ```
 
-Observe trade and book messages as they occur:
+Observe trade and book messages as they occur...
 
 ### Local Testing
 
@@ -45,7 +45,7 @@ Run the testcases:
 pytest pymatch/tests/
 ```
 
-See the [`pymatch/tests/test_orderbook.py::test_profile_orderbook`](pymatch/tests/test_orderbook.py) testcase for submitting orders to the matching engine within python.
+See the [`pymatch/tests/lse/test_lse_orderbook.py::test_profile_orderbook`](pymatch/tests/lse/test_lse_orderbook.py) testcase for submitting orders to the matching engine within python.
 
 ```python
 from pymatch import lse as lse_order_lib
@@ -57,6 +57,17 @@ buy_order = lse_order_lib.build_order_from_ascii_string('B,1234567890,32503,1234
 orderbook.add(buy_order)
 ```
 
+The output to stdout:
+
+```python
++-----------------------------------------------------------------+
+| BUY                            | SELL                           |
+| Id       | Volume      | Price | Price | Volume      | Id       |
++----------+-------------+-------+-------+-------------+----------+
+|1234567890|1,234,567,890| 32,503|       |             |          |
++-----------------------------------------------------------------+
+```
+
 ## Performance
 
 Please note, performance is severely degraded if displaying messages to stdout is also enabled.
@@ -66,5 +77,5 @@ To profile the performance of the orderbook set the set the environment variable
 ```sh
 head pymatch/tests/lse/test_data/orders.txt
 
-cat pymatch/tests/lse/test_data/orders.txt | docker -e ENABLE_PROFILING=1 run pymatch
+cat pymatch/tests/lse/test_data/orders.txt | docker run -i -e ENABLE_PROFILING=1 pymatch
 ```

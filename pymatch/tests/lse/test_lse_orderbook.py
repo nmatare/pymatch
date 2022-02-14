@@ -9,6 +9,8 @@ import io
 import sys
 import contextlib
 
+import pytest
+
 from pymatch import lse as lse_order_lib
 from pymatch.tests.lse import conftest
 
@@ -156,6 +158,7 @@ class TestIcebergOrder:
         ...
 
 
+@pytest.mark.skip(reason='Profiling only')
 def test_profile_orderbook(iterations: int = 1):
 
     # read from dumped testing data file
